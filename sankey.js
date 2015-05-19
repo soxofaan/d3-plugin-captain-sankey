@@ -61,17 +61,33 @@ d3.sankey = function() {
     var curvature = .5;
 
     function link(d) {
-      var x0 = d.source.x + d.source.dx,
-          x1 = d.target.x,
-          xi = d3.interpolateNumber(x0, x1),
-          x2 = xi(curvature),
-          x3 = xi(1 - curvature),
-          y0 = d.source.y + d.sy + d.dy / 2,
-          y1 = d.target.y + d.ty + d.dy / 2;
-      return "M" + x0 + "," + y0
-           + "C" + x2 + "," + y0
-           + " " + x3 + "," + y1
-           + " " + x1 + "," + y1;
+      var xs = d.source.x + d.source.dx,
+          xt = d.target.x,
+          xi = d3.interpolateNumber(xs, xt),
+          xsc = xi(curvature),
+          xtc = xi(1 - curvature),
+          ys = d.source.y + d.sy + d.dy / 2,
+          yt = d.target.y + d.ty + d.dy / 2;
+
+      if (!d.cycleBreaker) {
+        return "M" + xs + "," + ys
+             + "C" + xsc + "," + ys
+             + " " + xtc + "," + yt
+             + " " + xt + "," + yt;
+      }
+      else {
+        xsc = xi(-0.5*curvature);
+        xtc = xi(1 + 0.5*curvature);
+        var xm = xi(0.5);
+        var ym = d3.interpolateNumber(ys, yt)(-.5);
+        return "M" + xs + "," + ys
+             + "C" + xsc + "," + ys
+             + " " + xsc + "," + ym
+             + " " + xm + "," + ym
+             + "S" + xtc + "," + yt
+             + " " + xt + "," + yt;
+
+      }
     }
 
     link.curvature = function(_) {
@@ -129,13 +145,19 @@ d3.sankey = function() {
         node.x = x;
         node.dx = nodeWidth;
         node.sourceLinks.forEach(function(link) {
-          if (nextNodes.indexOf(link.target) < 0) {
+          if (nextNodes.indexOf(link.target) < 0 && !link.cycleBreaker) {
             nextNodes.push(link.target);
           }
         });
       });
-      remainingNodes = nextNodes;
-      ++x;
+      if (nextNodes.length == remainingNodes.length) {
+        console.warn('Detected cycles in the graph.');
+        findAndMarkCycleBreaker(nextNodes);
+      }
+      else {
+        remainingNodes = nextNodes;
+        ++x;
+      }
     }
 
     // Optionally move pure sinks always to the right.
@@ -145,6 +167,47 @@ d3.sankey = function() {
 
     scaleNodeBreadths((size[0] - nodeWidth) / (x - 1));
   }
+
+  // Find a link that breaks a cycle in the graph (if any).
+  function findAndMarkCycleBreaker(nodes) {
+  // Go through all nodes from the given subset and traverse links searching for cycles.
+    var link;
+    for (var n=nodes.length - 1; n >= 0; n--) {
+      link = depthFirstCycleSearch(nodes[n], []);
+      if (link) {
+        return link;
+      }
+    }
+
+    // Depth-first search to find a link that is part of a cycle.
+    function depthFirstCycleSearch(cursorNode, path) {
+      var target, link;
+      for (var n = cursorNode.sourceLinks.length - 1; n >= 0; n--) {
+        link = cursorNode.sourceLinks[n];
+        if (link.cycleBreaker) {
+          // Skip already known cycle breakers.
+          continue;
+        }
+        // Check if target makes a cycle with current path.
+        target = link.target;
+        if (path.indexOf(target) > -1) {
+          // Mark this link as a known cycle breaker.
+          link.cycleBreaker = true;
+          // Stop further search if we found a cycle breaker.
+          return link;
+        }
+        // Recurse deeper.
+        path.push(cursorNode);
+        link = depthFirstCycleSearch(target, path);
+        path.pop();
+        // Stop further search if we found a cycle breaker.
+        if (link) {
+          return link;
+        }
+      }
+    }
+  }
+
 
   function moveSourcesRight() {
     nodes.forEach(function(node) {
