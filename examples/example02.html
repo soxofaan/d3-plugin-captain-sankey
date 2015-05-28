@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Sankey Diagram Example</title>
+  <style>
+
+    body {
+      font-family: sans-serif;
+    }
+
+    .node rect {
+      fill-opacity: .9;
+      shape-rendering: crispEdges;
+    }
+
+    .link {
+      fill: none;
+      stroke: #024;
+      stroke-opacity: .2;
+    }
+
+    .link:hover {
+      stroke-opacity: .5;
+    }
+
+  </style>
+</head>
+<body>
+
+<div id="data-set-select"></div>
+<div id="chart"></div>
+
+<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+<script src="../sankey.js"></script>
+<script>
+
+  // Some setup stuff.
+  var margin = {top: 1, right: 1, bottom: 6, left: 1};
+  var width = 960 - margin.left - margin.right;
+  var height = 500 - margin.top - margin.bottom;
+  var color = d3.scale.category20();
+
+  // SVG (group) to draw in.
+  var svg = d3.select("#chart").append("svg")
+          .attr({
+            width: width + margin.left + margin.right,
+            height: height + margin.top + margin.bottom
+          })
+          .append("g")
+          .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  var linksGroup = svg.append("g").attr('class', 'links');
+  var nodesGroup = svg.append("g").attr('class', 'nodes');
+
+  // Set up Sankey object.
+  var sankey = d3.sankey()
+          .nodeWidth(30)
+          .nodePadding(5)
+          .size([width, height]);
+
+  // Get path data generator
+  var path = sankey.link();
+
+
+  // Callback to draw on a data set.
+  function sankeyDraw(data) {
+
+    sankey.nodes(data.nodes)
+            .links(data.links)
+            .sinksRight('sinksRight' in data ? data.sinksRight : true)
+            .layout(32);
+
+    // Draw the links.
+    var links = linksGroup.selectAll('.link').data(data.links);
+    // Enter
+    links.enter()
+            .append("path")
+            .attr('class', 'link');
+    // Enter + Update
+    links.attr('d', path)
+            .style("stroke-width", function (d) {
+              return Math.max(1, d.dy);
+            });
+    links.append("title")
+            .text(function (d) {
+              return d.source.name + " to " + d.target.name + " = " + d.value;
+            });
+    // Exit
+    links.exit().remove();
+
+    // Draw the nodes.
+    var nodes = nodesGroup.selectAll('.node').data(data.nodes);
+    // Enter
+    var nodesEnterSelection = nodes.enter()
+            .append("g")
+            .attr('class', 'node');
+    nodesEnterSelection.append("rect")
+            .attr('width', sankey.nodeWidth())
+            .append("title");
+    nodesEnterSelection.append("text")
+            .attr('x', sankey.nodeWidth() / 2)
+            .attr('dy', ".35em")
+            .attr("text-anchor", "middle")
+            .attr('transform', null);
+
+    // Enter + Update
+    nodes
+            .attr('transform', function (d) {
+              return "translate(" + d.x + "," + d.y + ")";
+            });
+    nodes.select('rect')
+            .attr('height', function (d) {
+              return d.dy;
+            })
+            .style('fill', function (d) {
+              return d.color = color(d.name.replace(/ .*/, ""));
+            })
+            .style('stroke', function (d) {
+              return d3.rgb(d.color).darker(2);
+            });
+    nodes.select('rect').select('title')
+            .text(function (d) {
+              return d.name;
+            });
+    nodes.select('text')
+            .attr('y', function (d) {
+              return d.dy / 2;
+            })
+            .text(function (d) {
+              return d.name;
+            });
+    // Exit
+    nodes.exit().remove();
+
+  }
+
+
+  // Data set selector.
+  var dataSets = [
+    'data/data01.js',
+    'data/data02.js',
+    'data/data03.js',
+    'data/data04.js',
+    'data/data05.js'
+  ];
+
+  // Try to get initial data set from url fragment.
+  var initialDataSet = window.location.hash.replace(/^#/, '');
+  if (dataSets.indexOf(initialDataSet) < 0) {
+    initialDataSet = dataSets[0];
+  }
+
+  // Dynamically load data from external source.
+  // To make this work with local (non HTTP) files (which rules out AJAX), we use a poor-man's JSONP approach.
+  function loadDataSet(dataSet) {
+    // Append the data set script, which should trigger the desired JSONP sankeyDraw() call.
+    d3.select('body').append('script').attr('src', dataSet);
+  }
+
+  // Populate data set selector
+  var dataSetSelect = d3.select('#data-set-select').append('select');
+  dataSetSelect.on('change', function () {
+    var dataSet = dataSetSelect.property('value');
+    loadDataSet(dataSet);
+    window.location.hash = dataSet;
+  });
+  dataSetSelect.selectAll('option')
+          .data(dataSets)
+          .enter()
+          .append('option')
+          .attr('value', function (d) {
+            return d;
+          })
+          .attr('selected', function (d) {
+            return d == initialDataSet ? 'selected' : undefined
+          })
+          .text(function (d) {
+            return d;
+          });
+
+  // Load initial data set.
+  loadDataSet(initialDataSet);
+
+</script>
+
+</body>
+</html>

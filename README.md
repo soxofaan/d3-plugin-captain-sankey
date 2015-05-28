@@ -3,7 +3,7 @@
 ## Demo
 
 - <http://bost.ocks.org/mike/sankey/>
-- see demo.html
+- see the `examples` folder
 
 
 ## Basic usage
