@@ -74,16 +74,17 @@ d3.sankey = function() {
              + "C" + xsc + "," + ys
              + " " + xtc + "," + yt
              + " " + xt + "," + yt;
-      }
-      else {
-        xsc = xi(-0.5*curvature);
-        xtc = xi(1 + 0.5*curvature);
+      } else {
+        var xdelta = 1.5 * d.dy;
+        xsc = xs + xdelta;
+        xtc = xt - xdelta;
         var xm = xi(0.5);
-        var ym = d3.interpolateNumber(ys, yt)(-.5);
+        var ym = d3.interpolateNumber(ys, yt)(0.5);
+        var ydelta = 1.8 * d.dy * (ym < (size[1]/2) ? -1 : 1);
         return "M" + xs + "," + ys
              + "C" + xsc + "," + ys
-             + " " + xsc + "," + ym
-             + " " + xm + "," + ym
+             + " " + xsc + "," + (ys + ydelta)
+             + " " + xm + "," + (ym + ydelta)
              + "S" + xtc + "," + yt
              + " " + xt + "," + yt;
 
