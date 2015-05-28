@@ -48,7 +48,6 @@ d3.sankey = function() {
     computeNodeValues();
     computeNodeBreadths();
     computeNodeDepths(iterations);
-    computeLinkDepths();
     return sankey;
   };
 
@@ -181,11 +180,14 @@ d3.sankey = function() {
     //
     initializeNodeDepth();
     resolveCollisions();
+    computeLinkDepths();
     for (var alpha = 1; iterations > 0; --iterations) {
       relaxRightToLeft(alpha *= .99);
       resolveCollisions();
+      computeLinkDepths();
       relaxLeftToRight(alpha);
       resolveCollisions();
+      computeLinkDepths();
     }
 
     function initializeNodeDepth() {
@@ -218,7 +220,7 @@ d3.sankey = function() {
       });
 
       function weightedSource(link) {
-        return center(link.source) * link.value;
+        return (link.source.y + link.sy + link.dy / 2) * link.value;
       }
     }
 
@@ -234,7 +236,7 @@ d3.sankey = function() {
       });
 
       function weightedTarget(link) {
-        return center(link.target) * link.value;
+        return (link.target.y + link.ty + link.dy / 2) * link.value;
       }
     }
 
