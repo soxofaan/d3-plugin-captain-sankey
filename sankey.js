@@ -152,7 +152,7 @@ d3.sankey = function() {
         });
       });
       if (nextNodes.length == remainingNodes.length) {
-        console.warn('Detected cycles in the graph.');
+        // There must be a cycle here. Let's search for a link that breaks it.
         findAndMarkCycleBreaker(nextNodes);
       }
       else {
@@ -189,16 +189,26 @@ d3.sankey = function() {
           // Skip already known cycle breakers.
           continue;
         }
-        // Check if target makes a cycle with current path.
+
+        // Check if target of link makes a cycle in current path.
         target = link.target;
-        if (path.indexOf(target) > -1) {
-          // Mark this link as a known cycle breaker.
-          link.cycleBreaker = true;
-          // Stop further search if we found a cycle breaker.
-          return link;
+        for (var l = 0; l < path.length; l++) {
+          if (path[l].source == target) {
+            // We found a cycle. Search for weakest link in cycle
+            var weakest = link;
+            for (; l < path.length; l++) {
+              if (path[l].value < weakest.value) {
+                weakest = path[l];
+              }
+            }
+            // Mark weakest link as (known) cycle breaker and abort search.
+            weakest.cycleBreaker = true;
+            return weakest;
+          }
         }
+
         // Recurse deeper.
-        path.push(cursorNode);
+        path.push(link);
         link = depthFirstCycleSearch(target, path);
         path.pop();
         // Stop further search if we found a cycle breaker.
