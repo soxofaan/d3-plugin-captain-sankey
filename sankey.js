@@ -75,12 +75,12 @@ d3.sankey = function() {
              + " " + xtc + "," + yt
              + " " + xt + "," + yt;
       } else {
-        var xdelta = 1.5 * d.dy;
+        var xdelta = (1.5 * d.dy + 0.05 * Math.abs(xs - xt));
         xsc = xs + xdelta;
         xtc = xt - xdelta;
         var xm = xi(0.5);
         var ym = d3.interpolateNumber(ys, yt)(0.5);
-        var ydelta = 1.8 * d.dy * (ym < (size[1]/2) ? -1 : 1);
+        var ydelta = (2 * d.dy + 0.1 * Math.abs(xs - xt) + 0.1 * Math.abs(ys - yt)) * (ym < (size[1] / 2) ? -1 : 1);
         return "M" + xs + "," + ys
              + "C" + xsc + "," + ys
              + " " + xsc + "," + (ys + ydelta)
@@ -154,6 +154,9 @@ d3.sankey = function() {
       if (nextNodes.length == remainingNodes.length) {
         // There must be a cycle here. Let's search for a link that breaks it.
         findAndMarkCycleBreaker(nextNodes);
+        // Start over.
+        // TODO: make this optional?
+        return computeNodeBreadths();
       }
       else {
         remainingNodes = nextNodes;

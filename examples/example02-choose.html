@@ -24,6 +24,11 @@
       stroke-opacity: .5;
     }
 
+    .link.backwards {
+      stroke: #402;
+      stroke-dasharray: 9,1;
+    }
+
   </style>
 </head>
 <body>
@@ -36,7 +41,7 @@
 <script>
 
   // Some setup stuff.
-  var margin = {top: 1, right: 1, bottom: 6, left: 1};
+  var margin = {top: 20, right: 20, bottom: 20, left: 20};
   var width = 960 - margin.left - margin.right;
   var height = 500 - margin.top - margin.bottom;
   var color = d3.scale.category20();
@@ -82,6 +87,8 @@
             .style("stroke-width", function (d) {
               return Math.max(1, d.dy);
             });
+    links.classed('backwards', function (d) { return d.target.x < d.source.x; });
+
     links.append("title")
             .text(function (d) {
               return d.source.name + " to " + d.target.name + " = " + d.value;
@@ -143,7 +150,8 @@
     'data/data03-simple.js',
     'data/data04-energy.js',
     'data/data05-elephant.js',
-    'data/data06-with-cycle.js'
+    'data/data06-with-cycle.js',
+    'data/data07-big-with-cycle.js'
   ];
 
   // Try to get initial data set from url fragment.
