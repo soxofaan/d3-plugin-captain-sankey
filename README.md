@@ -5,6 +5,7 @@
 - <http://bost.ocks.org/mike/sankey/>
 - see the `examples` folder
 
+![Captain Sankey Diagram Example](https://cloud.githubusercontent.com/assets/44946/8294625/08e5068c-193e-11e5-91f1-16dd6b72c0ec.png)
 
 ## Basic usage
 
