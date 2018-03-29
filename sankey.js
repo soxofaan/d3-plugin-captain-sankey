@@ -107,7 +107,8 @@ d3.sankey = function() {
     nodes.forEach(function(node) {
       node.value = Math.max(
         d3.sum(node.sourceLinks, value),
-        d3.sum(node.targetLinks, value)
+        d3.sum(node.targetLinks, value),
+        node.value ? node.value : 0
       );
     });
   }
