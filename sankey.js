@@ -1,4 +1,12 @@
-d3.sankey = function() {
+// Universal Module Definition Boilerplate
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) { define(['d3'], factory); }
+  else { root.d3.sankey = factory(root.d3); }
+}(typeof self !== 'undefined' ? self : this, function (d3) {
+// End of Universal Module Definition Boilerplate
+
+
+return function() {
   var sankey = {},
       nodeWidth = 24,
       nodePadding = 8,
@@ -319,3 +327,8 @@ d3.sankey = function() {
 
   return sankey;
 };
+
+
+// Universal Module Definition Boilerplate
+}));
+// End of Universal Module Definition Boilerplate
