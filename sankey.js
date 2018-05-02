@@ -13,7 +13,7 @@ return function() {
       size = [1, 1],
       nodes = [],
       links = [],
-      sinksRight = true;
+      tweakNodeBreadths = null;
 
   sankey.nodeWidth = function(_) {
     if (!arguments.length) return nodeWidth;
@@ -45,11 +45,34 @@ return function() {
     return sankey;
   };
 
- sankey.sinksRight = function (_) {
-    if (!arguments.length) return sinksRight;
-    sinksRight = _;
+  // Set optional layout callback to tweak the node breadths after automatic computing.
+  sankey.tweakNodeBreadths = function(f) {
+    if (!arguments.length) return tweakNodeBreadths;
+    tweakNodeBreadths = f;
     return sankey;
- };
+  };
+
+  // Layout callback to align source nodes to the right.
+  sankey.tweakNodeBreadths.moveSourcesRight = function moveSourcesRight(nodes, x) {
+    nodes.forEach(function(node) {
+      if (!node.targetLinks.length) {
+        node.x = d3.min(node.sourceLinks, function(d) { return d.target.x; }) - 1;
+      }
+    });
+  };
+
+  // Layout callback to move the sink nodes to the right.
+  sankey.tweakNodeBreadths.moveSinksRight = function moveSinksRight(nodes, x) {
+    nodes.forEach(function(node) {
+      if (!node.sourceLinks.length) {
+        node.x = x - 1;
+      }
+    });
+  };
+
+  sankey.sinksRight = function (sr) {
+    return sankey.tweakNodeBreadths(sr ? sankey.tweakNodeBreadths.moveSinksRight : null);
+  };
 
   sankey.layout = function(iterations) {
     computeNodeLinks();
@@ -147,28 +170,12 @@ return function() {
       ++x;
     }
 
-    // Optionally move pure sinks always to the right.
-    if (sinksRight) {
-      moveSinksRight(x);
+    // Optionally tweak nodes: e.g. move pure sinks always to the right.
+    if (tweakNodeBreadths) {
+      tweakNodeBreadths(nodes, x);
     }
 
     scaleNodeBreadths((size[0] - nodeWidth) / (x - 1));
-  }
-
-  function moveSourcesRight() {
-    nodes.forEach(function(node) {
-      if (!node.targetLinks.length) {
-        node.x = d3.min(node.sourceLinks, function(d) { return d.target.x; }) - 1;
-      }
-    });
-  }
-
-  function moveSinksRight(x) {
-    nodes.forEach(function(node) {
-      if (!node.sourceLinks.length) {
-        node.x = x - 1;
-      }
-    });
   }
 
   function scaleNodeBreadths(kx) {
